@@ -11,10 +11,10 @@ import MultipeerConnectivity
 
 // MARK: Type Aliases
 
-public typealias PeerBlock = ((myPeerID: MCPeerID, peerID: MCPeerID) -> Void)
-public typealias EventBlock = ((peerID: MCPeerID, event: String, object: AnyObject?) -> Void)
-public typealias ObjectBlock = ((peerID: MCPeerID, object: AnyObject?) -> Void)
-public typealias ResourceBlock = ((myPeerID: MCPeerID, resourceName: String, peer: MCPeerID, localURL: NSURL) -> Void)
+public typealias PeerBlock = ((_ myPeerID: MCPeerID, _ peerID: MCPeerID) -> Void)
+public typealias EventBlock = ((_ peerID: MCPeerID, _ event: String, _ object: AnyObject?) -> Void)
+public typealias ObjectBlock = ((_ peerID: MCPeerID, _ object: AnyObject?) -> Void)
+public typealias ResourceBlock = ((_ myPeerID: MCPeerID, _ resourceName: String, _ peer: MCPeerID, _ localURL: URL) -> Void)
 
 // MARK: Event Blocks
 
@@ -32,7 +32,7 @@ public var eventBlocks = [String: ObjectBlock]()
 import UIKit
 public let myName = UIDevice.currentDevice().name
 #else
-public let myName = NSHost.currentHost().localizedName ?? ""
+public let myName = Host.current().localizedName ?? ""
 #endif
 
 public var transceiver = Transceiver(displayName: myName)
@@ -40,67 +40,67 @@ public var session: MCSession?
 
 // MARK: Event Handling
 
-func didConnecting(myPeerID: MCPeerID, peer: MCPeerID) {
+func didConnecting(_ myPeerID: MCPeerID, peer: MCPeerID) {
     if let onConnecting = onConnecting {
-        dispatch_async(dispatch_get_main_queue()) {
-            onConnecting(myPeerID: myPeerID, peerID: peer)
+        DispatchQueue.main.async {
+            onConnecting(myPeerID, peer)
         }
     }
 }
 
-func didConnect(myPeerID: MCPeerID, peer: MCPeerID) {
+func didConnect(_ myPeerID: MCPeerID, peer: MCPeerID) {
     if session == nil {
         session = transceiver.session.mcSession
     }
     if let onConnect = onConnect {
-        dispatch_async(dispatch_get_main_queue()) {
-            onConnect(myPeerID: myPeerID, peerID: peer)
+        DispatchQueue.main.async {
+            onConnect(myPeerID, peer)
         }
     }
 }
 
-func didDisconnect(myPeerID: MCPeerID, peer: MCPeerID) {
+func didDisconnect(_ myPeerID: MCPeerID, peer: MCPeerID) {
     if let onDisconnect = onDisconnect {
-        dispatch_async(dispatch_get_main_queue()) {
-            onDisconnect(myPeerID: myPeerID, peerID: peer)
+        DispatchQueue.main.async {
+            onDisconnect(myPeerID, peer)
         }
     }
 }
 
-func didReceiveData(data: NSData, fromPeer peer: MCPeerID) {
-    if let dict = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? [String: AnyObject],
+func didReceiveData(_ data: Data, fromPeer peer: MCPeerID) {
+    if let dict = NSKeyedUnarchiver.unarchiveObject(with: data) as? [String: AnyObject],
         let event = dict["event"] as? String,
         let object: AnyObject? = dict["object"] {
-            dispatch_async(dispatch_get_main_queue()) {
+            DispatchQueue.main.async {
                 if let onEvent = onEvent {
-                    onEvent(peerID: peer, event: event, object: object)
+                    onEvent(peer, event, object)
                 }
                 if let eventBlock = eventBlocks[event] {
-                    eventBlock(peerID: peer, object: object)
+                    eventBlock(peer, object)
                 }
             }
     }
 }
 
-func didFinishReceivingResource(myPeerID: MCPeerID, resourceName: String, fromPeer peer: MCPeerID, atURL localURL: NSURL) {
+func didFinishReceivingResource(_ myPeerID: MCPeerID, resourceName: String, fromPeer peer: MCPeerID, atURL localURL: URL) {
     if let onFinishReceivingResource = onFinishReceivingResource {
-        dispatch_async(dispatch_get_main_queue()) {
-            onFinishReceivingResource(myPeerID: myPeerID, resourceName: resourceName, peer: peer, localURL: localURL)
+        DispatchQueue.main.async {
+            onFinishReceivingResource(myPeerID, resourceName, peer, localURL)
         }
     }
 }
 
 // MARK: Advertise/Browse
 
-public func transceive(serviceType: String, discoveryInfo: [String: String]? = nil) {
+public func transceive(_ serviceType: String, discoveryInfo: [String: String]? = nil) {
     transceiver.startTransceiving(serviceType: serviceType, discoveryInfo: discoveryInfo)
 }
 
-public func advertise(serviceType: String, discoveryInfo: [String: String]? = nil) {
+public func advertise(_ serviceType: String, discoveryInfo: [String: String]? = nil) {
     transceiver.startAdvertising(serviceType: serviceType, discoveryInfo: discoveryInfo)
 }
 
-public func browse(serviceType: String) {
+public func browse(_ serviceType: String) {
     transceiver.startBrowsing(serviceType: serviceType)
 }
 
@@ -111,33 +111,33 @@ public func stopTransceiving() {
 
 // MARK: Events
 
-public func sendEvent(event: String, object: AnyObject? = nil, toPeers peers: [MCPeerID]? = session?.connectedPeers) {
-    guard let peers = peers where !peers.isEmpty else {
+public func sendEvent(_ event: String, object: AnyObject? = nil, toPeers peers: [MCPeerID]? = session?.connectedPeers) {
+    guard let peers = peers , !peers.isEmpty else {
         return
     }
 
-    var rootObject: [String: AnyObject] = ["event": event]
+    var rootObject: [String: AnyObject] = ["event": event as AnyObject]
 
     if let object: AnyObject = object {
         rootObject["object"] = object
     }
 
-    let data = NSKeyedArchiver.archivedDataWithRootObject(rootObject)
+    let data = NSKeyedArchiver.archivedData(withRootObject: rootObject)
 
     do {
-        try session?.sendData(data, toPeers: peers, withMode: .Reliable)
+        try session?.send(data, toPeers: peers, with: .reliable)
     } catch _ {
     }
 }
 
-public func sendResourceAtURL(resourceURL: NSURL,
+public func sendResourceAtURL(_ resourceURL: URL,
                    withName resourceName: String,
   toPeers peers: [MCPeerID]? = session?.connectedPeers,
-  withCompletionHandler completionHandler: ((NSError?) -> Void)?) -> [NSProgress?]? {
+  withCompletionHandler completionHandler: ((NSError?) -> Void)?) -> [Progress?]? {
 
     if let session = session {
         return peers?.map { peerID in
-            return session.sendResourceAtURL(resourceURL, withName: resourceName, toPeer: peerID, withCompletionHandler: completionHandler)
+            return session.sendResource(at: resourceURL, withName: resourceName, toPeer: peerID, withCompletionHandler: completionHandler as! ((Error?) -> Void)?)
         }
     }
     return nil

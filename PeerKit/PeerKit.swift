@@ -102,8 +102,8 @@ public func advertise(_ serviceType: String, discoveryInfo: [String: String]? = 
     transceiver.startAdvertising(serviceType: serviceType, discoveryInfo: discoveryInfo)
 }
 
-public func browse(_ serviceType: String) {
-    transceiver.startBrowsing(serviceType: serviceType)
+public func browse(_ serviceType: String, contextData: Data? = nil) {
+    transceiver.startBrowsing(serviceType: serviceType, contextData: contextData)
 }
 
 public func stopTransceiving() {

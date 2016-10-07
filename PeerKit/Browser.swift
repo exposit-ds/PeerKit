@@ -14,6 +14,7 @@ let timeStarted = Date()
 class Browser: NSObject, MCNearbyServiceBrowserDelegate {
 
     let mcSession: MCSession
+    var contextData: Data? = nil
 
     init(mcSession: MCSession) {
         self.mcSession = mcSession
@@ -22,7 +23,8 @@ class Browser: NSObject, MCNearbyServiceBrowserDelegate {
 
     var mcBrowser: MCNearbyServiceBrowser?
 
-    func startBrowsing(_ serviceType: String) {
+    func startBrowsing(_ serviceType: String, contextData: Data? = nil) {
+        self.contextData = contextData
         mcBrowser = MCNearbyServiceBrowser(peer: mcSession.myPeerID, serviceType: serviceType)
         mcBrowser?.delegate = self
         mcBrowser?.startBrowsingForPeers()
@@ -34,7 +36,7 @@ class Browser: NSObject, MCNearbyServiceBrowserDelegate {
     }
 
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
-        browser.invitePeer(peerID, to: mcSession, withContext: nil, timeout: 30)
+        browser.invitePeer(peerID, to: mcSession, withContext: self.contextData, timeout: 30)
     }
 
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {

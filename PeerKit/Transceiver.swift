@@ -27,9 +27,9 @@ open class Transceiver: SessionDelegate {
         session.delegate = self
     }
 
-    func startTransceiving(serviceType: String, discoveryInfo: [String: String]? = nil) {
+    func startTransceiving(serviceType: String, discoveryInfo: [String: String]? = nil, contextData: Data? = nil) {
         advertiser.startAdvertising(serviceType: serviceType, discoveryInfo: discoveryInfo)
-        browser.startBrowsing(serviceType)
+        browser.startBrowsing(serviceType, contextData: contextData)
         transceiverMode = .both
     }
 
@@ -45,8 +45,8 @@ open class Transceiver: SessionDelegate {
         transceiverMode = .advertise
     }
 
-    func startBrowsing(serviceType: String) {
-        browser.startBrowsing(serviceType)
+    func startBrowsing(serviceType: String, contextData: Data? = nil) {
+        browser.startBrowsing(serviceType, contextData: contextData)
         transceiverMode = .browse
     }
 

@@ -15,6 +15,7 @@ public typealias PeerBlock = ((_ myPeerID: MCPeerID, _ peerID: MCPeerID) -> Void
 public typealias EventBlock = ((_ peerID: MCPeerID, _ event: String, _ object: AnyObject?) -> Void)
 public typealias ObjectBlock = ((_ peerID: MCPeerID, _ object: AnyObject?) -> Void)
 public typealias ResourceBlock = ((_ myPeerID: MCPeerID, _ resourceName: String, _ peer: MCPeerID, _ localURL: URL) -> Void)
+public typealias ConnectionValidationBlock = ((_ peer: MCPeerID, _ context: Data?) -> Bool)
 
 // MARK: Event Blocks
 
@@ -24,6 +25,7 @@ public var onDisconnect: PeerBlock?
 public var onEvent: EventBlock?
 public var onEventObject: ObjectBlock?
 public var onFinishReceivingResource: ResourceBlock?
+public var onReceiveInvitation: ConnectionValidationBlock?
 public var eventBlocks = [String: ObjectBlock]()
 
 // MARK: PeerKit Globals
@@ -133,7 +135,7 @@ public func sendEvent(_ event: String, object: AnyObject? = nil, toPeers peers: 
 public func sendResourceAtURL(_ resourceURL: URL,
                    withName resourceName: String,
   toPeers peers: [MCPeerID]? = session?.connectedPeers,
-  withCompletionHandler completionHandler: ((NSError?) -> Void)?) -> [Progress?]? {
+  withCompletionHandler completionHandler: ((Error?) -> Void)?) -> [Progress?]? {
 
     if let session = session {
         return peers?.map { peerID in

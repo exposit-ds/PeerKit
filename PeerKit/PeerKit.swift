@@ -15,6 +15,7 @@ public typealias PeerBlock = ((myPeerID: MCPeerID, peerID: MCPeerID) -> Void)
 public typealias EventBlock = ((peerID: MCPeerID, event: String, object: AnyObject?) -> Void)
 public typealias ObjectBlock = ((peerID: MCPeerID, object: AnyObject?) -> Void)
 public typealias ResourceBlock = ((myPeerID: MCPeerID, resourceName: String, peer: MCPeerID, localURL: NSURL) -> Void)
+public typealias ConnectionValidationBlock = ((peer: MCPeerID, context: NSData?) -> Bool)
 
 // MARK: Event Blocks
 
@@ -24,6 +25,7 @@ public var onDisconnect: PeerBlock?
 public var onEvent: EventBlock?
 public var onEventObject: ObjectBlock?
 public var onFinishReceivingResource: ResourceBlock?
+public var onReceiveInvitation: ConnectionValidationBlock?
 public var eventBlocks = [String: ObjectBlock]()
 
 // MARK: PeerKit Globals

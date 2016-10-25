@@ -25,7 +25,7 @@ public class Session: NSObject, MCSessionDelegate {
     public init(displayName: String, delegate: SessionDelegate? = nil) {
         myPeerID = MCPeerID(displayName: displayName)
         self.delegate = delegate
-        mcSession = MCSession(peer: myPeerID)
+        mcSession = MCSession(peer: myPeerID, securityIdentity: nil, encryptionPreference: .None)
         super.init()
         mcSession.delegate = self
     }
